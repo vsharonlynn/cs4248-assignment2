@@ -11,6 +11,12 @@ def read_test(filename):
 	with open(filename) as test_file:
 		return list(map(lambda line: list(line[:-1].split()), test_file.readlines()))
 
+def write_tagged_sent_to_file(sents, filename):
+	with open(filename, 'w') as out_file:
+		for sent in sents:
+			out_file.write(sent)
+			out_file.write('\n')
+
 def getTagCount(model, tag):
 	if tag in model['tag_count']:
 		return model['tag_count'][tag]
@@ -146,7 +152,6 @@ if __name__ == "__main__":
 		sys.exit(2)
 	test_filename, model_filename, output_filename = sys.argv[1:]
 	model = read_model(model_filename)
-	test = read_test(test_filename)
-	ans = list(map(lambda sent: ' '.join(viterbi(model, sent)), test))
-	for sent in ans:
-		print(sent)
+	test_sents = read_test(test_filename)
+	tagged_test_sents = list(map(lambda sent: ' '.join(viterbi(model, sent)), test_sents))
+	write_tagged_sent_to_file(tagged_test_sents, output_filename)

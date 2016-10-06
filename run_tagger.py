@@ -78,24 +78,25 @@ def viterbi(model, sent):
 		tags.remove('<s>')
 	if '</s>' in tags:
 		tags.remove('</s>')
-	#print(tags)
 	tag_size = len(tags)
 	sent_size = len(sent)
-	print('tags: ', tag_size, ', sentence: ', sent_size)
+	#print('tags: ', tag_size, ', sentence: ', sent_size)
+	
+	# Initialize memo to store Viterbi states.
 	memo = []
 	for i in range(tag_size):
 		memo_row = []
 		for j in range(sent_size):
 			memo_row.append([-123123123, -1])
 		memo.append(memo_row)
-	#print(memo)
 
-	# Init first column
+	# Initialize start of sentence.
 	for i in range(tag_size):
 		prob = getProbTagGivenTag(model, '<s>', tags[i]) + getProbWordGivenTag(model, tags[i], sent[0])
 		memo[i][0][0] = prob
 		memo[i][0][1] = 0
 	
+	# Go through Viterbi's algorithm.
 	for j in range(1, sent_size):
 		for i in range(tag_size):
 			for k in range(tag_size):
@@ -104,7 +105,8 @@ def viterbi(model, sent):
 					memo[i][j][0] = prob
 					memo[i][j][1] = k
 			memo[i][j][0] += getProbWordGivenTag(model, tags[i], sent[j])
-			
+
+	# Process end of sentence.
 	final_max, final_backpointer = -123123123,-1
 	for i in range(tag_size):
 		prob = memo[i][len(sent)-1][0] + getProbTagGivenTag(model, tags[i], '</s>')
@@ -112,13 +114,14 @@ def viterbi(model, sent):
 			final_max = prob
 			final_backpointer = i
 
-	print(final_backpointer)
-	for i in range(tag_size):
-		backpointers = []
-		for j in range(sent_size):
-			backpointers.append(memo[i][j][1])
-		print(i, tags[i], backpointers)
+	# print(final_backpointer)
+	# for i in range(tag_size):
+	# 	backpointers = []
+	# 	for j in range(sent_size):
+	# 		backpointers.append(memo[i][j][1])
+	# 	print(i, tags[i], backpointers)
 
+	# Trace back the backpointers to obtain POS tag sequence.
 	pointer = final_backpointer
 	sent_idx = sent_size-1
 	sequence = []
@@ -143,9 +146,7 @@ if __name__ == "__main__":
 		sys.exit(2)
 	test_filename, model_filename, output_filename = sys.argv[1:]
 	model = read_model(model_filename)
-	#print(model)
 	test = read_test(test_filename)
-	#print(test[:5])
 	ans = list(map(lambda sent: ' '.join(viterbi(model, sent)), test))
 	for sent in ans:
 		print(sent)

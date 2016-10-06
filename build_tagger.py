@@ -48,15 +48,17 @@ if __name__ == "__main__":
     model_filename = ''
     if len(sys.argv) < 4:
         print("Wrong Format!")
-        print("build_tagger.py <train file_name> <devt file_name> <model filename>")
+        print("build_tagger.py <train filename> <devt filename> <model filename>")
         sys.exit(2)
     train_filename, devt_filename, model_filename = sys.argv[1:]
-    data = read_data(train_filename)
+    data1 = read_data(train_filename)
+    data2 = read_data(devt_filename)
     counts = {
         'tag_given_tag': {},
         'word_given_tag': {},
-        'tag_count': {'<s>': len(data)},
+        'tag_count': {'<s>': len(data1) + len(data2)},
         'wordtype_count': {},
     }
-    generate_counts(counts, data)
+    generate_counts(counts, data1)
+    generate_counts(counts, data2)
     write_json_to_file(counts, model_filename)

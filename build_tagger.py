@@ -14,25 +14,32 @@ def generate_counts(counts, data):
         for idx in range(len(line)+1):
             if idx < len(line):
                 word, pos = line[idx]
-                if pos not in counts['word_given_pos']:
-                    counts['word_given_pos'][pos] = {'total':0, 'content':{}}
-                if word not in counts['word_given_pos'][pos]['content']:
-                    counts['word_given_pos'][pos]['content'][word] = 0
-                counts['word_given_pos'][pos]['content'][word] += 1
-                counts['word_given_pos'][pos]['total'] += 1
+                if pos not in counts['word_given_tag']:
+                    counts['word_given_tag'][pos] = {'total':0, 'content':{}}
+                if word not in counts['word_given_tag'][pos]['content']:
+                    counts['word_given_tag'][pos]['content'][word] = 0
+                counts['word_given_tag'][pos]['content'][word] += 1
+                counts['word_given_tag'][pos]['total'] += 1
+
+                if word not in counts['wordtype_count']:
+                    counts['wordtype_count'][word] = 0
+                counts['wordtype_count'][word] += 1
             else:
                 pos = '</s>'
+            if pos not in counts['tag_count']:
+                counts['tag_count'][pos] = 0
+            counts['tag_count'][pos] += 1
 
             if idx > 0:
                 prev_pos = line[idx-1][1]
             else:
                 prev_pos = '<s>'
-            if prev_pos not in counts['pos_given_pos']:
-                counts['pos_given_pos'][prev_pos] = {'total':0, 'content':{}}
-            if pos not in counts['pos_given_pos'][prev_pos]['content']:
-                counts['pos_given_pos'][prev_pos]['content'][pos] = 0
-            counts['pos_given_pos'][prev_pos]['content'][pos] += 1
-            counts['pos_given_pos'][prev_pos]['total'] += 1
+            if prev_pos not in counts['tag_given_tag']:
+                counts['tag_given_tag'][prev_pos] = {'total':0, 'content':{}}
+            if pos not in counts['tag_given_tag'][prev_pos]['content']:
+                counts['tag_given_tag'][prev_pos]['content'][pos] = 0
+            counts['tag_given_tag'][prev_pos]['content'][pos] += 1
+            counts['tag_given_tag'][prev_pos]['total'] += 1
     return counts
 
 if __name__ == "__main__":
@@ -46,8 +53,10 @@ if __name__ == "__main__":
     train_filename, devt_filename, model_filename = sys.argv[1:]
     data = read_data(train_filename)
     counts = {
-        'pos_given_pos': {},
-        'word_given_pos': {},
+        'tag_given_tag': {},
+        'word_given_tag': {},
+        'tag_count': {'<s>': len(data)},
+        'wordtype_count': {},
     }
     generate_counts(counts, data)
     write_json_to_file(counts, model_filename)

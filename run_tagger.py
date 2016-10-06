@@ -1,6 +1,7 @@
 import sys
 import json
-import math
+from language_model import *
+from witten_bell_smoothing import *
 
 def read_model(filename):
 	with open(filename) as model_file:
@@ -17,77 +18,14 @@ def write_tagged_sent_to_file(sents, filename):
 			out_file.write(sent)
 			out_file.write('\n')
 
-def getTagCount(model, tag):
-	if tag in model['tag_count']:
-		return model['tag_count'][tag]
-	else:
-		return 0
-
-# Tag - Tag
-def getTotalTags(model):
-	return len(model['tag_count'].keys())
-
-def getTagSeenTags(model, tag):
-	tags = list(model['tag_given_tag'][tag]['content'].keys())
-	return len(tags)
-
-def getTagUnseenTags(model, tag):
-	return getTotalTags(model) - getTagSeenTags(model, tag)
-
-def getCountTagTag(model, prev_tag, curr_tag):
-	if curr_tag not in model['tag_given_tag'][prev_tag]['content']:
-		return 0
-	else:
-		return model['tag_given_tag'][prev_tag]['content'][curr_tag]
-
-def getProbTagGivenTag(model, prev_tag, curr_tag):
-	count_tag_tag = getCountTagTag(model, prev_tag, curr_tag)
-	count_tag = getTagCount(model, prev_tag)
-	seen_tag = getTagSeenTags(model, prev_tag)
-	unseen_tag = getTagUnseenTags(model, prev_tag)
-	if count_tag_tag > 0.0:
-		prob = count_tag_tag / (count_tag + seen_tag)
-	else:
-		prob = count_tag / (unseen_tag * (count_tag + seen_tag))
-	return math.log10(prob)
-
-# Tag - Word
-def getTotalWordTypes(model):
-	return len(model['wordtype_count'].keys())
-
-def getTagSeenWords(model, tag):
-	return len(model['word_given_tag'][tag]['content'].keys())
-
-def getTagUnseenWords(model, tag):
-	return getTotalWordTypes(model) - getTagSeenWords(model, tag)
-
-def getCountTagWord(model, tag, word):
-	if word not in model['word_given_tag'][tag]['content']:
-		return 0
-	else:
-		return model['word_given_tag'][tag]['content'][word]
-
-def getProbWordGivenTag(model, tag, word):
-	count_tag_word = getCountTagWord(model, tag, word)
-	count_tag = getTagCount(model, tag)
-	seen_words = getTagSeenWords(model, tag)
-	unseen_words = getTagUnseenWords(model, tag)
-	if count_tag_word > 0:
-		prob = count_tag_word / (count_tag + seen_words)
-	else:
-		prob = count_tag / (unseen_words * (count_tag + seen_words))
-	return math.log10(prob)
-
 def viterbi(model, sent):
-	tags = list(model['tag_count'].keys())
-	if '<s>' in tags:
-		tags.remove('<s>')
-	if '</s>' in tags:
-		tags.remove('</s>')
+	tags = model.getTagList()
 	tag_size = len(tags)
 	sent_size = len(sent)
 	#print('tags: ', tag_size, ', sentence: ', sent_size)
 	
+	witten_bell = WittenBellSmoothing(model)
+
 	# Initialize memo to store Viterbi states.
 	memo = []
 	for i in range(tag_size):
@@ -98,7 +36,7 @@ def viterbi(model, sent):
 
 	# Initialize start of sentence.
 	for i in range(tag_size):
-		prob = getProbTagGivenTag(model, '<s>', tags[i]) + getProbWordGivenTag(model, tags[i], sent[0])
+		prob = witten_bell.getProbTagGivenTag('<s>', tags[i]) + witten_bell.getProbWordGivenTag(tags[i], sent[0])
 		memo[i][0][0] = prob
 		memo[i][0][1] = 0
 	
@@ -106,16 +44,16 @@ def viterbi(model, sent):
 	for j in range(1, sent_size):
 		for i in range(tag_size):
 			for k in range(tag_size):
-				prob = memo[k][j-1][0] + getProbTagGivenTag(model, tags[k], tags[i])
+				prob = memo[k][j-1][0] + witten_bell.getProbTagGivenTag(tags[k], tags[i])
 				if prob > memo[i][j][0]:
 					memo[i][j][0] = prob
 					memo[i][j][1] = k
-			memo[i][j][0] += getProbWordGivenTag(model, tags[i], sent[j])
+			memo[i][j][0] += witten_bell.getProbWordGivenTag(tags[i], sent[j])
 
 	# Process end of sentence.
 	final_max, final_backpointer = -123123123,-1
 	for i in range(tag_size):
-		prob = memo[i][len(sent)-1][0] + getProbTagGivenTag(model, tags[i], '</s>')
+		prob = memo[i][len(sent)-1][0] + witten_bell.getProbTagGivenTag(tags[i], '</s>')
 		if prob > final_max:
 			final_max = prob
 			final_backpointer = i
@@ -151,7 +89,7 @@ if __name__ == "__main__":
 		print('run_tagger.py <test filename> <model filename> <output filename>')
 		sys.exit(2)
 	test_filename, model_filename, output_filename = sys.argv[1:]
-	model = read_model(model_filename)
+	model = LanguageModel(read_model(model_filename))
 	test_sents = read_test(test_filename)
 	tagged_test_sents = list(map(lambda sent: ' '.join(viterbi(model, sent)), test_sents))
 	write_tagged_sent_to_file(tagged_test_sents, output_filename)

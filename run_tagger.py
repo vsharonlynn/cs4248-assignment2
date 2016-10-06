@@ -89,7 +89,8 @@ if __name__ == "__main__":
 		print('run_tagger.py <test filename> <model filename> <output filename>')
 		sys.exit(2)
 	test_filename, model_filename, output_filename = sys.argv[1:]
-	model = LanguageModel(read_model(model_filename))
+	model = LanguageModel()
+	model.fromFile(read_model(model_filename))
 	test_sents = read_test(test_filename)
 	tagged_test_sents = list(map(lambda sent: ' '.join(viterbi(model, sent)), test_sents))
 	write_tagged_sent_to_file(tagged_test_sents, output_filename)

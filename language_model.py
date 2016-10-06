@@ -9,7 +9,7 @@ class LanguageModel:
 	        'wordtype_count': {},
 	    }
 
-	def __init__(self, preloaded_counts):
+	def fromFile(self, preloaded_counts):
 		self.counts = preloaded_counts
 
 	def add_tag_word(self, tag, word):

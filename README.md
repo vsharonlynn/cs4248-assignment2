@@ -14,7 +14,7 @@ python run_tagger.py <test_filename> <model_filename> <output_filename>
 ```
 Example:
 ```sh
-python run_tagger.py sents.text model_file out_file
+python run_tagger.py sents.test model_file out_file
 ```
 
 # Additional Scripts for Testing

@@ -1,6 +1,4 @@
 class LanguageModel:
-	counts = {}
-
 	def __init__(self):
 		self.counts = {
 	        'tag_given_tag': {},
@@ -8,6 +6,10 @@ class LanguageModel:
 	        'tag_count': {},
 	        'wordtype_count': {},
 	    }
+		self.total_tag_count = None
+		self.total_wordtype_count = None
+		self.total_tag_given_tag_count = {}
+		self.total_word_given_tag_count = {}
 
 	def fromFile(self, preloaded_counts):
 		self.counts = preloaded_counts
@@ -54,11 +56,14 @@ class LanguageModel:
 
 	# Tag - Tag
 	def getTotalTags(self):
-		return len(self.counts['tag_count'].keys())
+		if self.total_tag_count == None:
+			self.total_tag_count = len(self.counts['tag_count'])
+		return self.total_tag_count
 
 	def getTagSeenTags(self, tag):
-		tags = list(self.counts['tag_given_tag'][tag]['content'].keys())
-		return len(tags)
+		if tag not in self.total_tag_given_tag_count:
+			self.total_tag_given_tag_count[tag] = len(self.counts['tag_given_tag'][tag]['content'])
+		return self.total_tag_given_tag_count[tag]
 
 	def getTagUnseenTags(self, tag):
 		return self.getTotalTags() - self.getTagSeenTags(tag)
@@ -71,10 +76,14 @@ class LanguageModel:
 
 	# Tag - Word
 	def getTotalWordTypes(self):
-		return len(self.counts['wordtype_count'].keys())
+		if self.total_wordtype_count == None:
+			self.total_wordtype_count = len(self.counts['wordtype_count'])
+		return self.total_wordtype_count
 
 	def getTagSeenWords(self, tag):
-		return len(self.counts['word_given_tag'][tag]['content'].keys())
+		if tag not in self.total_word_given_tag_count:
+			self.total_word_given_tag_count[tag] = len(self.counts['word_given_tag'][tag]['content'])
+		return self.total_word_given_tag_count[tag]
 
 	def getTagUnseenWords(self, tag):
 		return self.getTotalWordTypes() - self.getTagSeenWords(tag)
@@ -84,5 +93,3 @@ class LanguageModel:
 			return 0
 		else:
 			return self.counts['word_given_tag'][tag]['content'][word]
-
-	

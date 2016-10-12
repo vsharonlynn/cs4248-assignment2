@@ -23,8 +23,16 @@ def viterbi(model, sent):
 	tag_size = len(tags)
 	sent_size = len(sent)
 	#print('tags: ', tag_size, ', sentence: ', sent_size)
-	
+
 	witten_bell = WittenBellSmoothing(model)
+
+	# Precompute tag given tag.
+	taggiventag = []
+	for i in range(tag_size):
+		taggiventagrow = []
+		for j in range(tag_size):
+			taggiventagrow.append(witten_bell.getProbTagGivenTag(tags[i], tags[j]))
+		taggiventag.append(taggiventagrow)
 
 	# Initialize memo to store Viterbi states.
 	memo = []
@@ -39,12 +47,12 @@ def viterbi(model, sent):
 		prob = witten_bell.getProbTagGivenTag('<s>', tags[i]) + witten_bell.getProbWordGivenTag(tags[i], sent[0])
 		memo[i][0][0] = prob
 		memo[i][0][1] = 0
-	
+
 	# Go through Viterbi's algorithm.
 	for j in range(1, sent_size):
 		for i in range(tag_size):
 			for k in range(tag_size):
-				prob = memo[k][j-1][0] + witten_bell.getProbTagGivenTag(tags[k], tags[i])
+				prob = memo[k][j-1][0] + taggiventag[k][i]
 				if prob > memo[i][j][0]:
 					memo[i][j][0] = prob
 					memo[i][j][1] = k
